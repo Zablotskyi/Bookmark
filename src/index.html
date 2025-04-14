@@ -86,7 +86,7 @@
         books.forEach((book, index) => {
             const li = document.createElement('li');
             li.textContent = book;
-            // Можна додати можливість видалення, якщо буде необхідно (наприклад, по кліку видаляти елемент)
+            // За кліком на книгу можна реалізувати видалення (якщо потрібно)
             li.addEventListener('click', () => deleteBook(index));
             booksList.appendChild(li);
         });
@@ -108,13 +108,23 @@
         loadBooks();
     }
 
-    // Обробка події надсилання форми
+    // Обробка події надсилання форми з валідацією на дублікати
     document.getElementById('bookForm').addEventListener('submit', function(e) {
         e.preventDefault();
         const bookTitle = document.getElementById('book-title').value.trim();
         if (bookTitle) {
+            const books = JSON.parse(localStorage.getItem('books')) || [];
+            // Перевірка на дублікати (без врахування регістру)
+            const duplicate = books.some(book => book.toLowerCase() === bookTitle.toLowerCase());
+            if (duplicate) {
+                // Запит на підтвердження додавання дубліката
+                const confirmAdd = confirm('Книга з такою назвою вже існує. Ви бажаєте додати книгу?');
+                if (!confirmAdd) {
+                    return;  // Якщо користувач скасовує, вихід з функції
+                }
+            }
             addBook(bookTitle);
-            document.getElementById('book-title').value = ''; // Очистка поля після додавання
+            document.getElementById('book-title').value = '';
         }
     });
 
