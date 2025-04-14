@@ -3,15 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Введення назви книги</title>
+    <title>Додаток для введення книг</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             margin: 40px;
+            background-color: #f5f5f5;
         }
         .container {
-            max-width: 400px;
+            max-width: 500px;
             margin: auto;
+            padding: 20px;
+            background: #fff;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+        h1, h3 {
+            text-align: center;
+        }
+        form {
+            margin-bottom: 20px;
         }
         label {
             display: block;
@@ -20,23 +31,95 @@
         }
         input[type="text"] {
             width: 100%;
-            padding: 8px;
-            box-sizing: border-box;
-            margin-bottom: 16px;
+            padding: 10px;
+            margin-bottom: 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
         }
         input[type="submit"] {
-            padding: 8px 16px;
+            width: 100%;
+            padding: 10px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
             cursor: pointer;
+        }
+        input[type="submit"]:hover {
+            background-color: #0056b3;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        li {
+            background: #e9ecef;
+            margin-bottom: 8px;
+            padding: 10px;
+            border-radius: 4px;
         }
     </style>
 </head>
 <body>
 <div class="container">
-    <form action="#" method="post">
+    <h1>Мій Додаток</h1>
+    <form id="bookForm">
         <label for="book-title">Назва книги:</label>
         <input type="text" id="book-title" name="book-title" placeholder="Введіть назву книги">
-        <input type="submit" value="Відправити">
+        <input type="submit" value="Додати книгу">
     </form>
+
+    <div class="book-list">
+        <h3>Список книг</h3>
+        <ul id="booksList"></ul>
+    </div>
 </div>
+
+<script>
+    // Функція для завантаження книг з localStorage та відображення їх у списку
+    function loadBooks() {
+        const books = JSON.parse(localStorage.getItem('books')) || [];
+        const booksList = document.getElementById('booksList');
+        booksList.innerHTML = '';
+        books.forEach((book, index) => {
+            const li = document.createElement('li');
+            li.textContent = book;
+            // Можна додати можливість видалення, якщо буде необхідно (наприклад, по кліку видаляти елемент)
+            li.addEventListener('click', () => deleteBook(index));
+            booksList.appendChild(li);
+        });
+    }
+
+    // Функція для додавання нової книги
+    function addBook(title) {
+        const books = JSON.parse(localStorage.getItem('books')) || [];
+        books.push(title);
+        localStorage.setItem('books', JSON.stringify(books));
+        loadBooks();
+    }
+
+    // Функція для видалення книги за індексом
+    function deleteBook(index) {
+        let books = JSON.parse(localStorage.getItem('books')) || [];
+        books.splice(index, 1);
+        localStorage.setItem('books', JSON.stringify(books));
+        loadBooks();
+    }
+
+    // Обробка події надсилання форми
+    document.getElementById('bookForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const bookTitle = document.getElementById('book-title').value.trim();
+        if (bookTitle) {
+            addBook(bookTitle);
+            document.getElementById('book-title').value = ''; // Очистка поля після додавання
+        }
+    });
+
+    // Завантаження списку книг при завантаженні сторінки
+    loadBooks();
+</script>
 </body>
 </html>
