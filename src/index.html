@@ -59,6 +59,14 @@
             margin-bottom: 8px;
             padding: 10px;
             border-radius: 4px;
+            display: flex;
+        }
+        .book-id {
+            width: 40px;
+            font-weight: bold;
+        }
+        .book-title {
+            flex-grow: 1;
         }
     </style>
 </head>
@@ -85,18 +93,44 @@
         booksList.innerHTML = '';
         books.forEach((book, index) => {
             const li = document.createElement('li');
-            li.textContent = book;
-            // За кліком на книгу можна реалізувати видалення (якщо потрібно)
+
+            // Створення елементу для ID
+            const spanId = document.createElement('span');
+            spanId.className = 'book-id';
+            spanId.textContent = book.id + ".";
+
+            // Створення елементу для назви книги
+            const spanTitle = document.createElement('span');
+            spanTitle.className = 'book-title';
+            spanTitle.textContent = book.title;
+
+            li.appendChild(spanId);
+            li.appendChild(spanTitle);
+
+            // При кліку - можливість видалення книги
             li.addEventListener('click', () => deleteBook(index));
+
             booksList.appendChild(li);
         });
     }
 
-    // Функція для додавання нової книги
+    // Функція для додавання нової книги з унікальним ID
     function addBook(title) {
         const books = JSON.parse(localStorage.getItem('books')) || [];
-        books.push(title);
+
+        // Отримання наступного ID (якщо не встановлено, встановлюємо 1)
+        let nextId = localStorage.getItem('bookNextId');
+        if (!nextId) {
+            nextId = 1;
+        } else {
+            nextId = parseInt(nextId, 10);
+        }
+
+        const newBook = { id: nextId, title };
+        books.push(newBook);
+
         localStorage.setItem('books', JSON.stringify(books));
+        localStorage.setItem('bookNextId', nextId + 1);
         loadBooks();
     }
 
@@ -115,12 +149,12 @@
         if (bookTitle) {
             const books = JSON.parse(localStorage.getItem('books')) || [];
             // Перевірка на дублікати (без врахування регістру)
-            const duplicate = books.some(book => book.toLowerCase() === bookTitle.toLowerCase());
+            const duplicate = books.some(book => book.title.toLowerCase() === bookTitle.toLowerCase());
             if (duplicate) {
                 // Запит на підтвердження додавання дубліката
                 const confirmAdd = confirm('Книга з такою назвою вже існує. Ви бажаєте додати книгу?');
                 if (!confirmAdd) {
-                    return;  // Якщо користувач скасовує, вихід з функції
+                    return;
                 }
             }
             addBook(bookTitle);
