@@ -1,169 +1,603 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Додаток для введення книг</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Електронні закладки — MVP</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 40px;
-            background-color: #f5f5f5;
+        :root{
+            --brand: hsl(212 85% 52%);
+            --bg: hsl(210 40% 98%);
+            --card: #fff;
+            --text: hsl(222 47% 11%);
+            --muted: hsl(215 16% 47%);
+            --accent: hsl(28 90% 55%);
+            --danger: hsl(0 72% 55%);
+            --success: hsl(150 65% 40%);
+            --radius: 14px;
         }
-        .container {
-            max-width: 500px;
-            margin: auto;
-            padding: 20px;
-            background: #fff;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            border-radius: 8px;
+        body.dark{
+            --bg: hsl(220 18% 10%);
+            --card: hsl(222 23% 16%);
+            --text: hsl(210 20% 96%);
+            --muted: hsl(215 14% 72%);
+            --brand: hsl(212 90% 62%);
+            --accent: hsl(28 95% 60%);
+            --danger: hsl(0 80% 60%);
+            --success: hsl(150 65% 45%);
         }
-        h1, h3 {
-            text-align: center;
-        }
-        form {
-            margin-bottom: 20px;
-        }
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
-        }
-        input[type="text"] {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 12px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 16px;
-        }
-        input[type="submit"] {
-            width: 100%;
-            padding: 10px;
-            background-color: #007BFF;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            font-size: 16px;
-            cursor: pointer;
-        }
-        input[type="submit"]:hover {
-            background-color: #0056b3;
-        }
-        ul {
-            list-style: none;
-            padding: 0;
-        }
-        li {
-            background: #e9ecef;
-            margin-bottom: 8px;
-            padding: 10px;
-            border-radius: 4px;
-            display: flex;
-        }
-        .book-id {
-            width: 40px;
-            font-weight: bold;
-        }
-        .book-title {
-            flex-grow: 1;
+        *{box-sizing:border-box}
+        html,body{height:100%}
+        body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,sans-serif;color:var(--text);background:var(--bg)}
+
+        header{position:sticky;top:0;background:var(--card);border-bottom:1px solid #e9eef3;z-index:5}
+        body.dark header{border-color:#2a3340}
+        .wrap{max-width:1200px;margin:0 auto;padding:14px 18px}
+        .title{display:flex;gap:12px;align-items:center;justify-content:space-between}
+        h1{font-size:20px;margin:0}
+        .toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+        input[type="text"], input[type="number"], textarea{width:100%;border:1px solid #e1e7ee;border-radius:10px;padding:10px 12px;font:inherit;background:#fff;color:#0f1b2d}
+        body.dark input[type="text"], body.dark input[type="number"], body.dark textarea{background:#111826;color:#eaf0f8;border-color:#2a3340}
+        textarea{min-height:90px}
+        button{border:0;border-radius:10px;padding:10px 12px;font:inherit;cursor:pointer;background:var(--brand);color:#fff}
+        button.ghost{background:#eef4fb;color:#0f1b2d}
+        body.dark button.ghost{background:#1b2430;color:#eaf0f8;border:1px solid #2a3340}
+        button.danger{background:var(--danger)}
+        button.secondary{background:var(--accent)}
+        button:disabled{opacity:.6;cursor:not-allowed}
+        select{border:1px solid #e1e7ee;border-radius:10px;padding:10px 12px;background:#fff}
+        body.dark select{background:#111826;color:#eaf0f8;border-color:#2a3340}
+
+        .layout{display:grid;grid-template-columns:300px 1fr;gap:16px;max-width:1200px;margin:18px auto;padding:0 18px}
+
+        .card{background:var(--card);border:1px solid #e9eef3;border-radius:var(--radius);box-shadow:0 1px 2px rgba(0,0,0,.03)}
+        body.dark .card{border-color:#2a3340;box-shadow:none}
+        .card .hd{padding:12px 14px;border-bottom:1px solid #eef2f6;display:flex;align-items:center;justify-content:space-between;gap:8px}
+        body.dark .card .hd{border-color:#2a3340}
+        .card .bd{padding:14px}
+
+        /* Sidebar */
+        .books{height:calc(100dvh - 140px);overflow:auto}
+        .book-item{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;cursor:pointer}
+        .book-item:hover{background:#f3f7fb}
+        body.dark .book-item:hover{background:#1b2430}
+        .book-item.active{background:#eaf2ff;border:1px solid #d6e7ff}
+        body.dark .book-item.active{background:#16202b;border-color:#2a3340}
+        .book-title{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .book-actions{display:flex;gap:6px}
+
+        /* Main */
+        .stack{display:grid;gap:10px}
+        .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+        .notes{display:grid;gap:10px}
+        .note{border:1px solid #e9eef3;border-radius:12px;padding:10px}
+        body.dark .note{border-color:#2a3340}
+        .note .top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+        .muted{color:var(--muted);font-size:13px}
+
+        .chips-row{display:flex;flex-wrap:wrap;gap:6px}
+        .chip{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:16px;border:1px solid #e1e7ee;background:#fff;font-size:12px}
+        body.dark .chip{background:#0f1520;border-color:#2a3340;color:#cfd8e3}
+        .chip button{background:transparent;color:inherit;border:0;padding:0 0 0 2px;cursor:pointer}
+
+        /* Search results */
+        .results{display:grid;gap:10px}
+        .result{padding:10px;border:1px dashed #e1e7ee;border-radius:12px;background:#fff}
+        body.dark .result{background:#0f1520;border-color:#2a3340}
+        .result b{background:#fff2c6}
+
+        /* Для прихованих label (доступність + тиша від інспектора) */
+        .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+        @media (max-width:900px){
+            .layout{grid-template-columns:1fr}
+            .books{height:auto}
         }
     </style>
 </head>
 <body>
-<div class="container">
-    <h1>Мій Додаток</h1>
-    <form id="bookForm">
-        <label for="book-title">Назва книги:</label>
-        <input type="text" id="book-title" name="book-title" placeholder="Введіть назву книги">
-        <input type="submit" value="Додати книгу">
-    </form>
-
-    <div class="book-list">
-        <h3>Список книг</h3>
-        <ul id="booksList"></ul>
+<header>
+    <div class="wrap title">
+        <h1>Електронні закладки</h1>
+        <div class="toolbar" style="flex:1;justify-content:flex-end">
+            <label class="sr-only" for="q">Глобальний пошук</label>
+            <input id="q" type="text" placeholder="Пошук у всіх книгах…" style="max-width:360px" />
+            <button id="searchBtn" class="ghost" title="Пошук [Enter]">Пошук</button>
+            <button id="exportBtn" class="ghost" title="Експорт у JSON">Експорт</button>
+            <label class="ghost" style="display:inline-flex;align-items:center;gap:8px;cursor:pointer">
+                <input id="importFile" type="file" accept="application/json" hidden />
+                <span class="btn-like" style="padding:10px 12px;border:1px solid #e1e7ee;border-radius:10px;background:#fff">Імпорт</span>
+            </label>
+            <button id="themeBtn" class="ghost" title="Темна/світла тема">🌓</button>
+        </div>
     </div>
-</div>
+</header>
+
+<main class="layout">
+    <!-- Sidebar: books list + add book -->
+    <section class="card">
+        <div class="hd">
+            <strong>Книги</strong>
+            <button id="addBookBtn" class="secondary">Нова книга</button>
+        </div>
+        <div class="bd books" id="books"></div>
+    </section>
+
+    <!-- Main: current book notes and add note -->
+    <section class="card">
+        <div class="hd" style="gap:14px">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                <strong id="currentBookTitle">Виберіть або створіть книгу</strong>
+                <span class="muted" id="noteCount"></span>
+            </div>
+            <div class="row">
+                <label class="sr-only" for="bookFilter">Фільтр у поточній книзі</label>
+                <input id="bookFilter" type="text" placeholder="Фільтр у поточній книзі…" style="max-width:240px" />
+                <select id="sortNotes" title="Сортування">
+                    <option value="page-asc">Сторінка ↑</option>
+                    <option value="page-desc">Сторінка ↓</option>
+                    <option value="newest">Новіші</option>
+                    <option value="oldest">Старіші</option>
+                </select>
+                <button id="deleteBookBtn" class="danger" title="Видалити книгу з усіма закладками" disabled>Видалити книгу</button>
+            </div>
+        </div>
+        <div class="bd">
+            <div id="tagFilterWrap" class="chips-row" style="margin-bottom:10px;display:none"></div>
+
+            <div id="addNoteForm" class="stack" style="display:none">
+                <div class="row">
+                    <label class="sr-only" for="page">Сторінка</label>
+                    <input id="page" type="number" min="1" step="1" placeholder="Сторінка" style="max-width:120px" />
+                    <button id="nextPageBtn" class="ghost" title="Наступна сторінка">+1</button>
+
+                    <label class="sr-only" for="summary">Короткий зміст</label>
+                    <input id="summary" type="text" placeholder="Короткий зміст/теза" />
+
+                    <label class="sr-only" for="tags">Теги</label>
+                    <input id="tags" type="text" placeholder="Теги (через кому)" style="max-width:240px" />
+                    <button id="addNoteBtn">Додати закладку</button>
+                </div>
+                <label class="sr-only" for="fullText">Повний текст</label>
+                <textarea id="fullText" placeholder="Повний текст (необов'язково)"></textarea>
+            </div>
+
+            <div class="notes" id="notes"></div>
+            <div id="emptyState" class="muted">Закладок поки немає.</div>
+        </div>
+    </section>
+</main>
+
+<section class="wrap" style="max-width:1200px">
+    <div class="card">
+        <div class="hd">
+            <strong>Результати пошуку</strong>
+            <span class="muted" id="resCount"></span>
+        </div>
+        <div class="bd">
+            <div class="results" id="results"></div>
+            <div id="noResults" class="muted">Тут з'являться збіги за вашим запитом.</div>
+        </div>
+    </div>
+</section>
+
+<footer class="wrap" style="color:var(--muted);font-size:13px;margin-bottom:24px">
+    Локальна версія. Дані зберігаються у <code>localStorage</code> вашого браузера. Експортуйте JSON для резервних копій.
+</footer>
 
 <script>
-    // Функція для завантаження книг з localStorage та відображення їх у списку
-    function loadBooks() {
-        const books = JSON.parse(localStorage.getItem('books')) || [];
-        const booksList = document.getElementById('booksList');
-        booksList.innerHTML = '';
-        books.forEach((book, index) => {
-            const li = document.createElement('li');
+    (function(){
+        "use strict";
 
-            // Створення елементу для ID
-            const spanId = document.createElement('span');
-            spanId.className = 'book-id';
-            spanId.textContent = book.id + ".";
+        // ---- Storage & state ----
+        const KEY = "eBookmarks-MVP:v1";
+        const uid = () => "id-" + Math.random().toString(36).slice(2) + Date.now().toString(36);
+        const load = () => { try { return JSON.parse(localStorage.getItem(KEY)) || { books: [], prefs:{theme:"light", sort:"page-asc"} }; } catch { return { books: [], prefs:{theme:"light", sort:"page-asc"} }; } };
+        const save = (s) => localStorage.setItem(KEY, JSON.stringify(s));
+        let state = load();
+        let currentBookId = state.books[0]?.id || null;
+        let selectedTags = new Set();
 
-            // Створення елементу для назви книги
-            const spanTitle = document.createElement('span');
-            spanTitle.className = 'book-title';
-            spanTitle.textContent = book.title;
+        // ---- Theme ----
+        function applyTheme(){ document.body.classList.toggle("dark", state.prefs?.theme==="dark"); }
+        applyTheme();
 
-            li.appendChild(spanId);
-            li.appendChild(spanTitle);
+        // ---- DOM refs ----
+        const booksEl   = document.getElementById("books");
+        const titleEl   = document.getElementById("currentBookTitle");
+        const noteCountEl = document.getElementById("noteCount");
+        const addNoteForm = document.getElementById("addNoteForm");
+        const notesEl   = document.getElementById("notes");
+        const emptyEl   = document.getElementById("emptyState");
+        const delBtn    = document.getElementById("deleteBookBtn");
+        const tagFilterWrap = document.getElementById("tagFilterWrap");
 
-            // При кліку - можливість видалення книги
-            li.addEventListener('click', () => deleteBook(index));
+        const addBookBtn   = document.getElementById("addBookBtn");
+        const addNoteBtn   = document.getElementById("addNoteBtn");
+        const pageInput    = document.getElementById("page");
+        const summaryInput = document.getElementById("summary");
+        const fullTextInput= document.getElementById("fullText");
+        const tagsInput    = document.getElementById("tags");
+        const nextPageBtn  = document.getElementById("nextPageBtn");
 
-            booksList.appendChild(li);
-        });
-    }
+        const bookFilterEl = document.getElementById("bookFilter");
+        const sortNotesEl  = document.getElementById("sortNotes");
 
-    // Функція для додавання нової книги з унікальним ID
-    function addBook(title) {
-        const books = JSON.parse(localStorage.getItem('books')) || [];
+        const qEl          = document.getElementById("q");
+        const searchBtn    = document.getElementById("searchBtn");
+        const resultsEl    = document.getElementById("results");
+        const resCountEl   = document.getElementById("resCount");
+        const noResultsEl  = document.getElementById("noResults");
 
-        // Отримання наступного ID (якщо не встановлено, встановлюємо 1)
-        let nextId = localStorage.getItem('bookNextId');
-        if (!nextId) {
-            nextId = 1;
-        } else {
-            nextId = parseInt(nextId, 10);
+        // ---- Utils ----
+        function escapeHtml(str){
+            const div = document.createElement("div");
+            div.textContent = String(str ?? "");
+            return div.innerHTML;
+        }
+        function currentBook(){ return state.books.find(b=>b.id===currentBookId) || null; }
+        function saveState(){ save(state); }
+        function parseTags(s){
+            return (s || "")
+                .split(",")
+                .map(x=>x.trim())
+                .filter(Boolean)
+                .filter((v,i,arr)=> arr.findIndex(y=> y.toLocaleLowerCase()===v.toLocaleLowerCase())===i);
+        }
+        function bookUniqueTags(b){
+            const set = new Set();
+            (b.notes||[]).forEach(n => (n.tags||[]).forEach(t => set.add(t)));
+            return Array.from(set).sort((a,b)=> a.localeCompare(b));
+        }
+        function normalize(s){ return (s || "").toLocaleLowerCase(); }
+
+        // Підсвічування без regex (безпечне)
+        function highlightPlain(text, query){
+            if(!query) return escapeHtml(text || "");
+            const src = String(text || "");
+            const q = query.toLocaleLowerCase();
+            if(!q) return escapeHtml(src);
+            const hay = src.toLocaleLowerCase();
+            let i = 0, out = "";
+            let idx = hay.indexOf(q, i);
+            while(idx !== -1){
+                out += escapeHtml(src.slice(i, idx));
+                out += "<b>" + escapeHtml(src.slice(idx, idx + q.length)) + "</b>";
+                i = idx + q.length;
+                idx = hay.indexOf(q, i);
+            }
+            out += escapeHtml(src.slice(i));
+            return out;
         }
 
-        const newBook = { id: nextId, title };
-        books.push(newBook);
+        // ---- Render books list ----
+        function renderBooks(){
+            booksEl.innerHTML = "";
+            if(state.books.length===0){
+                booksEl.innerHTML = '<div class="muted" style="padding:10px">Поки що немає книг. Додайте першу.</div>';
+                currentBookId = null;
+                updateMain();
+                return;
+            }
+            state.books.forEach((b)=>{
+                const item = document.createElement("div");
+                item.className = "book-item" + (b.id===currentBookId ? " active" : "");
+                item.innerHTML =
+                    '<div class="book-title" title="'+escapeHtml(b.title)+'">'+escapeHtml(b.title)+'</div>' +
+                    '<div class="book-actions">' +
+                    '  <button class="ghost" data-act="rename" title="Перейменувати">✎</button>' +
+                    '  <button class="ghost danger" data-act="remove" title="Видалити">✕</button>' +
+                    '</div>';
 
-        localStorage.setItem('books', JSON.stringify(books));
-        localStorage.setItem('bookNextId', nextId + 1);
-        loadBooks();
-    }
+                item.addEventListener("click",(e)=>{
+                    if(!e.target.dataset.act){ currentBookId = b.id; selectedTags.clear(); renderBooks(); updateMain(); }
+                });
+                item.querySelector('[data-act="rename"]').addEventListener("click",(e)=>{
+                    e.stopPropagation();
+                    const name = prompt("Нова назва книги:", b.title);
+                    if(name && name.trim()){ b.title = name.trim(); saveState(); renderBooks(); updateMain(); }
+                });
+                item.querySelector('[data-act="remove"]').addEventListener("click",(e)=>{
+                    e.stopPropagation();
+                    if(confirm("Видалити книгу з усіма закладками?")){
+                        state.books = state.books.filter(x=>x.id!==b.id);
+                        if(currentBookId===b.id){ currentBookId = state.books[0]?.id || null; }
+                        saveState(); renderBooks(); updateMain();
+                    }
+                });
 
-    // Функція для видалення книги за індексом
-    function deleteBook(index) {
-        let books = JSON.parse(localStorage.getItem('books')) || [];
-        books.splice(index, 1);
-        localStorage.setItem('books', JSON.stringify(books));
-        loadBooks();
-    }
+                booksEl.appendChild(item);
+            });
+        }
 
-    // Обробка події надсилання форми з валідацією на дублікати
-    document.getElementById('bookForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const bookTitle = document.getElementById('book-title').value.trim();
-        if (bookTitle) {
-            const books = JSON.parse(localStorage.getItem('books')) || [];
-            // Перевірка на дублікати (без врахування регістру)
-            const duplicate = books.some(book => book.title.toLowerCase() === bookTitle.toLowerCase());
-            if (duplicate) {
-                // Запит на підтвердження додавання дубліката
-                const confirmAdd = confirm('Книга з такою назвою вже існує. Ви бажаєте додати книгу?');
-                if (!confirmAdd) {
-                    return;
+        // ---- Tag filter chips ----
+        function renderTagFilter(b){
+            const tags = bookUniqueTags(b);
+            tagFilterWrap.innerHTML = "";
+            if(tags.length===0){ tagFilterWrap.style.display="none"; return; }
+            tagFilterWrap.style.display="flex";
+
+            const clearBtn = document.createElement("button");
+            clearBtn.className = "ghost";
+            clearBtn.textContent = selectedTags.size ? ("Очистити фільтр ("+selectedTags.size+")") : "Фільтр за тегами";
+            clearBtn.title = "Показати всі закладки";
+            clearBtn.addEventListener("click", ()=>{ selectedTags.clear(); updateMain(); });
+            tagFilterWrap.appendChild(clearBtn);
+
+            tags.forEach(t=>{
+                const chip = document.createElement("span");
+                const active = selectedTags.has(t);
+                chip.className = "chip";
+                chip.style.outline = active ? "2px solid var(--accent)" : "none";
+                chip.innerHTML = escapeHtml(t) + ' <button title="Додати/прибрати">'+(active?'−':'+')+'</button>';
+                chip.addEventListener("click", ()=>{ active ? selectedTags.delete(t) : selectedTags.add(t); updateMain(); });
+                tagFilterWrap.appendChild(chip);
+            });
+        }
+
+        // ---- Render main (notes) ----
+        function updateMain(){
+            const b = currentBook();
+            if(!b){
+                titleEl.textContent = "Виберіть або створіть книгу";
+                noteCountEl.textContent = "";
+                addNoteForm.style.display = "none";
+                delBtn.disabled = true;
+                notesEl.innerHTML = "";
+                tagFilterWrap.style.display = "none";
+                emptyEl.style.display = "block";
+                return;
+            }
+            titleEl.textContent = b.title;
+            noteCountEl.textContent = (b.notes && b.notes.length) ? ("• " + String(b.notes.length) + " закладок") : "";
+            addNoteForm.style.display = "grid";
+            delBtn.disabled = false;
+
+            renderTagFilter(b);
+
+            // локальний фільтр + теги + сортування
+            const q = (bookFilterEl.value || "").toLocaleLowerCase().trim();
+            const byTags = selectedTags;
+            const sort = state.prefs?.sort || "page-asc";
+
+            let notes = (b.notes || []).slice();
+            if(q){
+                notes = notes.filter(n=>{
+                    const hay = (n.summary||"").toLocaleLowerCase() + "\n" + (n.fullText||"").toLocaleLowerCase();
+                    return hay.indexOf(q) !== -1;
+                });
+            }
+            if(byTags.size){
+                notes = notes.filter(n => (n.tags||[]).some(t => byTags.has(t)));
+            }
+            notes.sort((a,c)=>{
+                if(sort==="page-asc")  return a.page - c.page;
+                if(sort==="page-desc") return c.page - a.page;
+                if(sort==="newest")    return new Date(c.createdAt) - new Date(a.createdAt);
+                if(sort==="oldest")    return new Date(a.createdAt) - new Date(c.createdAt);
+                return a.page - c.page;
+            });
+
+            notesEl.innerHTML = "";
+            emptyEl.style.display = notes.length ? "none" : "block";
+
+            notes.forEach(n=>{
+                const el = document.createElement("div");
+                el.className = "note";
+                const tagsHtml = (n.tags||[]).map(t => '<span class="chip" title="Тег">'+escapeHtml(t)+'</span>').join(" ");
+                el.innerHTML =
+                    '<div class="top">' +
+                    '  <div><strong>Стор. ' + n.page + '</strong> <span class="muted">• ' + new Date(n.createdAt).toLocaleString() + '</span></div>' +
+                    '  <div class="row">' +
+                    '    <button class="ghost" data-act="edit">Редагувати</button>' +
+                    '    <button class="ghost danger" data-act="del">Видалити</button>' +
+                    '  </div>' +
+                    '</div>' +
+                    '<div class="muted" style="margin-top:6px">' + escapeHtml(n.summary || "") + '</div>' +
+                    (n.fullText ? ('<details style="margin-top:6px"><summary>Повний текст</summary><div style="margin-top:6px">' + escapeHtml(n.fullText) + '</div></details>') : '') +
+                    (tagsHtml ? ('<div class="chips-row" style="margin-top:8px">'+tagsHtml+'</div>') : '');
+
+                // edit
+                el.querySelector('[data-act="edit"]').addEventListener("click", ()=>{
+                    const page = parseInt(prompt("Номер сторінки:", n.page), 10);
+                    const summary = (prompt("Короткий зміст:", n.summary||"") ?? n.summary);
+                    const full = (prompt("Повний текст (необов’язково):", n.fullText||"") ?? n.fullText);
+                    const tagsStr = (prompt("Теги (через кому):", (n.tags||[]).join(", ")) ?? (n.tags||[]).join(", "));
+                    if(!Number.isFinite(page) || page < 1){ alert("Сторінка має бути цілим числом ≥ 1"); return; }
+                    n.page = Math.floor(page);
+                    n.summary = (summary||"").trim();
+                    n.fullText = (full||"").trim();
+                    n.tags = parseTags(tagsStr);
+                    saveState(); updateMain();
+                });
+
+                // delete
+                el.querySelector('[data-act="del"]').addEventListener("click", ()=>{
+                    if(confirm("Видалити цю закладку?")){
+                        b.notes = (b.notes||[]).filter(x=>x.id!==n.id);
+                        saveState(); updateMain();
+                    }
+                });
+
+                notesEl.appendChild(el);
+            });
+        }
+
+        // ---- Global search ----
+        function searchGlobal(){
+            const query = (qEl && qEl.value ? qEl.value : "").trim();
+
+            // очистка виводу
+            resultsEl.innerHTML = "";
+            resCountEl.textContent = "";
+            if(!query){
+                noResultsEl.style.display = "block";
+                return;
+            }
+            noResultsEl.style.display = "none";
+
+            const qn = query.toLocaleLowerCase();
+            const matches = [];
+
+            // проходимо всі книги та закладки
+            for (const b of (state.books || [])) {
+                for (const n of (b.notes || [])) {
+                    const fields = [
+                        b.title || "",
+                        n.summary || "",
+                        n.fullText || "",
+                        ...(n.tags || [])
+                    ];
+                    const hay = fields.join("\n").toLocaleLowerCase();
+                    if (hay.indexOf(qn) !== -1) {
+                        matches.push({
+                            bookId: b.id,
+                            bookTitle: b.title || "",
+                            page: n.page,
+                            summary: n.summary || "",
+                            fullText: n.fullText || "",
+                            createdAt: n.createdAt
+                        });
+                    }
                 }
             }
-            addBook(bookTitle);
-            document.getElementById('book-title').value = '';
-        }
-    });
 
-    // Завантаження списку книг при завантаженні сторінки
-    loadBooks();
+            // сортування: назва книги → сторінка → новіші
+            matches.sort((a,b)=>{
+                const byTitle = a.bookTitle.localeCompare(b.bookTitle);
+                if(byTitle!==0) return byTitle;
+                if(a.page!==b.page) return a.page - b.page;
+                return new Date(b.createdAt) - new Date(a.createdAt);
+            });
+
+            if(matches.length === 0){
+                resCountEl.textContent = "Нічого не знайдено";
+                noResultsEl.style.display = "block";
+                return;
+            }
+            resCountEl.textContent = String(matches.length) + " збіг(ів)";
+
+            // рендер результатів
+            for (const m of matches) {
+                const el = document.createElement("div");
+                el.className = "result";
+                const snippet = m.fullText || m.summary || "";
+                el.innerHTML =
+                    '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">' +
+                    '  <div><strong>'+escapeHtml(m.bookTitle)+'</strong> <span class="muted">• стор. '+m.page+'</span></div>' +
+                    '  <button class="ghost" data-act="go">Перейти до книги</button>' +
+                    '</div>' +
+                    '<div class="muted" style="margin-top:6px">' +
+                    (snippet ? highlightPlain(snippet, query) : '<i>Без тексту</i>') +
+                    '</div>';
+
+                el.querySelector('[data-act="go"]').addEventListener("click", ()=>{
+                    currentBookId = m.bookId; renderBooks(); updateMain();
+                    // прокрутка до потрібної сторінки
+                    const children = Array.prototype.slice.call(notesEl.children);
+                    const target = children.find(ch=>{
+                        const t = ch.querySelector(".top");
+                        return t && t.textContent && t.textContent.indexOf("Стор. "+m.page)!==-1;
+                    });
+                    if(target){
+                        target.scrollIntoView({ behavior:"smooth", block:"center" });
+                        target.style.outline = "2px solid var(--accent)";
+                        setTimeout(()=>{ target.style.outline = "none"; }, 1500);
+                    }
+                });
+
+                resultsEl.appendChild(el);
+            }
+        }
+
+        // ---- Actions ----
+        document.getElementById("exportBtn").addEventListener("click", ()=>{
+            const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url; a.download = "ebookmarks.json"; a.click();
+            URL.revokeObjectURL(url);
+        });
+
+        document.getElementById("importFile").addEventListener("change", async (e)=>{
+            const f = e.target.files[0]; if(!f) return;
+            try{
+                const text = await f.text();
+                const json = JSON.parse(text);
+                if(!json || !Array.isArray(json.books)){
+                    alert("Неправильний формат");
+                    e.target.value = "";
+                    return;
+                }
+                state = json;
+                state.prefs = state.prefs || { theme:"light", sort:"page-asc" };
+                currentBookId = state.books[0]?.id || null;
+                selectedTags.clear();
+                saveState(); renderBooks(); updateMain(); applyTheme();
+                alert("Імпортовано успішно");
+            }catch(err){ alert("Помилка імпорту: " + err.message); }
+            e.target.value = "";
+        });
+
+        document.getElementById("themeBtn").addEventListener("click", ()=>{
+            state.prefs = state.prefs || {};
+            state.prefs.theme = state.prefs.theme === "dark" ? "light" : "dark";
+            saveState(); applyTheme();
+        });
+
+        document.getElementById("addBookBtn").addEventListener("click", ()=>{
+            const title = prompt("Назва книги:");
+            if(!title || !title.trim()) return;
+            const book = { id: uid(), title: title.trim(), createdAt: new Date().toISOString(), notes: [] };
+            state.books.push(book);
+            currentBookId = book.id;
+            selectedTags.clear();
+            saveState(); renderBooks(); updateMain();
+        });
+
+        document.getElementById("addNoteBtn").addEventListener("click", ()=>{
+            const b = currentBook(); if(!b) return;
+            const page = parseInt(pageInput.value, 10);
+            if(!Number.isFinite(page) || page < 1){ alert("Введіть коректний номер сторінки (ціле число ≥ 1)."); return; }
+            const summary  = summaryInput.value.trim();
+            const fullText = fullTextInput.value.trim();
+            const tags     = parseTags(tagsInput.value);
+
+            b.notes = b.notes || [];
+            b.notes.push({ id: uid(), page, summary, fullText, tags, createdAt: new Date().toISOString() });
+
+            pageInput.value = ""; summaryInput.value = ""; fullTextInput.value = ""; tagsInput.value = "";
+            saveState(); updateMain();
+        });
+
+        document.getElementById("deleteBookBtn").addEventListener("click", ()=>{
+            const b = currentBook(); if(!b) return;
+            if(confirm("Видалити книгу та всі її закладки?")){
+                state.books = state.books.filter(x=>x.id!==b.id);
+                currentBookId = state.books[0]?.id || null;
+                selectedTags.clear();
+                saveState(); renderBooks(); updateMain();
+            }
+        });
+
+        document.getElementById("nextPageBtn").addEventListener("click", ()=>{
+            const b = currentBook(); if(!b) return;
+            let last = 0;
+            (b.notes||[]).forEach(n => { if(n.page > last) last = n.page; });
+            pageInput.value = String((last||0) + 1);
+            summaryInput.focus();
+        });
+
+        bookFilterEl.addEventListener("input", updateMain);
+        sortNotesEl.addEventListener("change", (e)=>{ state.prefs.sort = e.target.value; saveState(); updateMain(); });
+
+        qEl.addEventListener("keydown", (e)=>{ if(e.key==="Enter") searchGlobal(); });
+        searchBtn.addEventListener("click", searchGlobal);
+
+        // ---- Init ----
+        renderBooks();
+        updateMain();
+    })();
 </script>
 </body>
 </html>
